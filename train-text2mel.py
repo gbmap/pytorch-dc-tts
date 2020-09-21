@@ -29,11 +29,12 @@ else:
     from datasets.mb_speech import vocab, MBSpeech as SpeechDataset
 
 use_gpu = torch.cuda.is_available()
+#use_gpu = False
 print('use_gpu', use_gpu)
 if use_gpu:
     torch.backends.cudnn.benchmark = True
 
-train_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
+train_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=32,
                                        mode='train')
 valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
                                        mode='valid')
@@ -108,7 +109,7 @@ def train(train_epoch, phase='train'):
         W = W.cuda()
         gates = gates.cuda()
 
-        Y_logit, Y, A = text2mel(L, S)
+        Y_logit, Y, A = text2mel(L.long(), S)
 
         l1_loss = F.l1_loss(Y, S_shifted)
         masks = gates.reshape(B, 1, T).float()

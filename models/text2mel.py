@@ -60,7 +60,7 @@ class TextEnc(nn.Module):
         """
         super(TextEnc, self).__init__()
         self.d = d
-        self.embedding = E(len(vocab), e)
+        self.embedding = E(len(vocab), e).cuda()
 
         self.layers = nn.Sequential(
             Conv(e, 2 * d, 1, 1, nonlinearity='relu'),

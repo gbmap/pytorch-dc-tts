@@ -10,6 +10,7 @@ import requests
 from tqdm import tqdm
 from skimage.io import imsave
 from skimage import img_as_ubyte
+from colorama import Fore, Back
 
 
 def get_last_checkpoint_file_name(logdir):
@@ -71,3 +72,15 @@ def save_to_png(file_name, array):
     # from skimage._shared._warnings import expected_warnings
     # with expected_warnings(['precision']):
     imsave(file_name, img_as_ubyte(array))
+
+LOG_DEFAULT_CATEGORY = 'DC-TTS'
+LOG_CURRENT_CATEGORY = LOG_DEFAULT_CATEGORY 
+
+def set_log_category(cat): 
+    LOG_CURRENT_CATEGORY = cat
+
+def reset_log_category():
+    LOG_CURRENT_CATEGORY = LOG_DEFAULT_CATEGORY
+
+def log(string, clr=Fore.WHITE, cat=LOG_CURRENT_CATEGORY, priority=0, end='\n'):
+    print('{}[{}]{}{}'.format(Fore.YELLOW, cat, Fore.RESET+clr, string), end=end)

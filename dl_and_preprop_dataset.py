@@ -13,6 +13,7 @@ import argparse
 import fnmatch
 import librosa
 import pandas as pd
+import platform
 
 from hparams import HParams as hp
 from zipfile import ZipFile
@@ -24,6 +25,69 @@ from datasets.lj_speech import LJSpeech
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--dataset", required=True, choices=['ljspeech', 'mbspeech'], help='dataset name')
 args = parser.parse_args()
+
+class DatasetPreprocessing:
+    def __init__(self, dataset_name, datasets_path, dataset_path):
+        self.dataset_name = dataset_name
+        self.datasets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
+        self.dataset_path = os.path.join(datasets_path, dataset_name)
+
+        if os.path.isdir(self.dataset_path):
+            utils.log('{} dataset folder already exists'.format(self.dataset_name))
+        else:
+            self.get_dataset()
+
+        preprocessor = self.get_preprocessor()
+        preprocess(self.dataset_path, preprocessor)
+
+        
+    def get_dataset(self):
+        pass
+
+class LJSpeechDatasetPreprocessing(DatasetPreprocessing):
+    def __init__(self):
+        super().__init__('LJSpeech-1.1')
+        self.dataset_file_name = 'LJSpeech-1.1.tar.bz2'
+
+    def get_dataset(self):
+        dataset_file_path = os.path.join(self.datasets_path, self.dataset_file_name)
+        if not os.path.isfile(dataset_file_path):
+            url = "http://data.keithito.com/data/speech/%s" % dataset_file_name
+            utils.download_file(url, dataset_file_path)
+        else:
+            utils.log('{} already exists. Skipping dataset download.' % dataset_file_path)
+
+        if platform.platform() != 'Windows':
+            utils.log('Extracting %s ...' % self.dataset_file_name)
+            os.system('cd %s; tar xvjf %s' % (datasets_path, dataset_file_name))
+        else:
+            err = 'Can\'t extract tar file programmatically, please extract manually'
+            utils.log(err)
+            raise Exception(err)
+
+    def get_preprocessor(self):
+        return LJSpeech([])
+
+class MBSpeechDatasetPreprocessing(DatasetPreprocessing):
+    def __init__(self):
+        super().__init__('MBSpeech-1.0')
+
+    def get_dataset(self):
+        bible_books = ['01_Genesis', '02_Exodus', '03_Leviticus']
+        for bible_book_name in bible_books:
+            bible_book_file_name = '%s.zip' % bible_book_name
+            bible_book_file_path = os.path.join(self.datasets_path, bible_book_file_name)
+            if not os.path.isfile(bible_book_file_path):
+                url = "https://s3.us-east-2.amazonaws.com/bible.davarpartners.com/Mongolian/" + bible_book_file_name
+                download_file(url, bible_book_file_path)
+            else:
+                utils.log("'%s' already exists" % bible_book_file_name)
+
+            print("extracting '%s'..." % bible_book_file_name)
+            zipfile = ZipFile(bible_book_file_path)
+            zipfile.extractall(datasets_path)
+
+
 
 if args.dataset == 'ljspeech':
     dataset_file_name = 'LJSpeech-1.1.tar.bz2'
