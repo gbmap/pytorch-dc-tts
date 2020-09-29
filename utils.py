@@ -82,5 +82,6 @@ def set_log_category(cat):
 def reset_log_category():
     LOG_CURRENT_CATEGORY = LOG_DEFAULT_CATEGORY
 
+
 def log(string, clr=Fore.WHITE, cat=LOG_CURRENT_CATEGORY, priority=0, end='\n'):
     print('{}[{}]{}{}'.format(Fore.YELLOW, cat, Fore.RESET+clr, string), end=end)

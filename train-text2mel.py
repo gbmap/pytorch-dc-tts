@@ -55,15 +55,12 @@ if last_checkpoint_file_name:
     print("loading the last checkpoint: %s" % last_checkpoint_file_name)
     start_epoch, global_step = load_checkpoint(last_checkpoint_file_name, text2mel, optimizer)
 
-
 def get_lr():
     return optimizer.param_groups[0]['lr']
-
 
 def lr_decay(step, warmup_steps=4000):
     new_lr = hp.text2mel_lr * warmup_steps ** 0.5 * min((step + 1) * warmup_steps ** -1.5, (step + 1) ** -0.5)
     optimizer.param_groups[0]['lr'] = new_lr
-
 
 def train(train_epoch, phase='train'):
     global global_step
@@ -151,14 +148,14 @@ def train(train_epoch, phase='train'):
 
     return epoch_loss
 
-
 since = time.time()
 epoch = start_epoch
+
 while True:
     train_epoch_loss = train(epoch, phase='train')
     time_elapsed = time.time() - since
     time_str = 'total time elapsed: {:.0f}h {:.0f}m {:.0f}s '.format(time_elapsed // 3600, time_elapsed % 3600 // 60,
-                                                                     time_elapsed % 60)
+                                                                    time_elapsed % 60)
     print("train epoch loss %f, step=%d, %s" % (train_epoch_loss, global_step, time_str))
 
     valid_epoch_loss = train(epoch, phase='valid')
