@@ -9,7 +9,7 @@ __all__ = ['Text2MelDataLoader', 'SSRNDataLoader']
 
 
 class Text2MelDataLoader(DataLoader):
-    def __init__(self, text2mel_dataset, batch_size, mode='train', num_workers=8):
+    def __init__(self, text2mel_dataset, batch_size, mode='train', num_workers=0):
         if mode == 'train':
             text2mel_dataset.slice(0, -batch_size)
         elif mode == 'valid':
@@ -24,7 +24,7 @@ class Text2MelDataLoader(DataLoader):
 
 
 class SSRNDataLoader(DataLoader):
-    def __init__(self, ssrn_dataset, batch_size, mode='train', num_workers=8):
+    def __init__(self, ssrn_dataset, batch_size, mode='train', num_workers=0):
         if mode == 'train':
             ssrn_dataset.slice(0, -batch_size)
             super().__init__(ssrn_dataset,

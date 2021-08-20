@@ -7,3 +7,9 @@ logdir/
 samples
 *.npy
 *.tar.bz2
+
+franco/
+mfreeman/
+bgae_pretrained/
+offerman/
+ljspeech/

@@ -18,24 +18,23 @@ from hparams import HParams as hp
 from logger import Logger
 from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoint
 from datasets.data_loader import Text2MelDataLoader
+from datasets.speech_dataset import vocab, SpeechDataset
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--dataset", required=True, choices=['ljspeech', 'mbspeech'], help='dataset name')
+parser.add_argument("--dataset", required=True, help='dataset folder')
 args = parser.parse_args()
 
-if args.dataset == 'ljspeech':
-    from datasets.lj_speech import vocab, LJSpeech as SpeechDataset
-else:
-    from datasets.mb_speech import vocab, MBSpeech as SpeechDataset
+dataset_folder = args.dataset
 
 use_gpu = torch.cuda.is_available()
+#use_gpu = False
 print('use_gpu', use_gpu)
 if use_gpu:
     torch.backends.cudnn.benchmark = True
 
-train_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
+train_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates'], dir_name=dataset_folder), batch_size=32,
                                        mode='train')
-valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
+valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates'], dir_name=dataset_folder), batch_size=64,
                                        mode='valid')
 
 text2mel = Text2Mel(vocab).cuda()
@@ -54,15 +53,12 @@ if last_checkpoint_file_name:
     print("loading the last checkpoint: %s" % last_checkpoint_file_name)
     start_epoch, global_step = load_checkpoint(last_checkpoint_file_name, text2mel, optimizer)
 
-
 def get_lr():
     return optimizer.param_groups[0]['lr']
-
 
 def lr_decay(step, warmup_steps=4000):
     new_lr = hp.text2mel_lr * warmup_steps ** 0.5 * min((step + 1) * warmup_steps ** -1.5, (step + 1) ** -0.5)
     optimizer.param_groups[0]['lr'] = new_lr
-
 
 def train(train_epoch, phase='train'):
     global global_step
@@ -108,7 +104,7 @@ def train(train_epoch, phase='train'):
         W = W.cuda()
         gates = gates.cuda()
 
-        Y_logit, Y, A = text2mel(L, S)
+        Y_logit, Y, A = text2mel(L.long(), S)
 
         l1_loss = F.l1_loss(Y, S_shifted)
         masks = gates.reshape(B, 1, T).float()
@@ -150,14 +146,14 @@ def train(train_epoch, phase='train'):
 
     return epoch_loss
 
-
 since = time.time()
 epoch = start_epoch
+
 while True:
     train_epoch_loss = train(epoch, phase='train')
     time_elapsed = time.time() - since
     time_str = 'total time elapsed: {:.0f}h {:.0f}m {:.0f}s '.format(time_elapsed // 3600, time_elapsed % 3600 // 60,
-                                                                     time_elapsed % 60)
+                                                                    time_elapsed % 60)
     print("train epoch loss %f, step=%d, %s" % (train_epoch_loss, global_step, time_str))
 
     valid_epoch_loss = train(epoch, phase='valid')
