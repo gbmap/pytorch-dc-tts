@@ -21,10 +21,12 @@ parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.A
 parser.add_argument("--dataset", required=True, help='dataset folder')
 args = parser.parse_args()
 
-if args.dataset == 'ljspeech':
-    from datasets.lj_speech import LJSpeech as SpeechDataset
-else:
-    from datasets.mb_speech import MBSpeech as SpeechDataset
+from datasets.speech_dataset import SpeechDataset
+
+#if args.dataset == 'ljspeech':
+#    from datasets.lj_speech import LJSpeech as SpeechDataset
+#else:
+#    from datasets.mb_speech import MBSpeech as SpeechDataset
 
 dataset_folder = args.dataset
 

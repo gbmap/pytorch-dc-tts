@@ -32,10 +32,18 @@ print('use_gpu', use_gpu)
 if use_gpu:
     torch.backends.cudnn.benchmark = True
 
-train_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates'], dir_name=dataset_folder), batch_size=32,
-                                       mode='train')
-valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates'], dir_name=dataset_folder), batch_size=64,
-                                       mode='valid')
+dataset_text2mel = SpeechDataset(['texts', 'mels', 'mel_gates'], dir_name=dataset_folder)
+train_data_loader = Text2MelDataLoader(
+    text2mel_dataset=dataset_text2mel, 
+    batch_size=32,
+    mode='train'
+)
+
+valid_data_loader = Text2MelDataLoader(
+    text2mel_dataset=dataset_text2mel, 
+    batch_size=64,
+    mode='valid'
+)
 
 text2mel = Text2Mel(vocab).cuda()
 
