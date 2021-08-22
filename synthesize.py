@@ -10,39 +10,42 @@ from tqdm import *
 import numpy as np
 import torch
 
-from models import Text2Mel, SSRN
-from hparams import HParams as hp
-from audio import save_to_wav
-from utils import get_last_checkpoint_file_name, load_checkpoint, save_to_png
+from models                  import Text2Mel, SSRN
+from hparams                 import HParams as hp
+from audio                   import save_to_wav
+from utils                   import get_last_checkpoint_file_name, load_checkpoint, save_to_png
+from datasets.speech_dataset import vocab, get_test_data
 
+
+#
+#  Parse arguments and global parameters
+#
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--dataset", required=True, choices=['ljspeech', 'mbspeech'], help='dataset name')
+parser.add_argument("--dataset", required=True, help='dataset name')
+parser.add_argument("--sentences", required=False, help="file containing sentences")
+parser.add_argument("--sentence", required=False, help="single sentence")
+parser.add_argument("--output_dir", required=False, help="output directory")
+
 args = parser.parse_args()
 
-if args.dataset == 'ljspeech':
-    from datasets.lj_speech import vocab, get_test_data
-
-    SENTENCES = [
-        "I like big butts and I cannot lie, you other brothers cant deny.",
-    ]
+if args.sentence is not None and len(args.sentence) > 0:
+    SENTENCES = [args.sentence]
 else:
-    from datasets.mb_speech import vocab, get_test_data
+    with open(args.sentences, 'r') as f:
+        SENTENCES = f.readlines()
 
-    SENTENCES = [
-        "Нийслэлийн прокурорын газраас төрийн өндөр албан тушаалтнуудад холбогдох зарим эрүүгийн хэргүүдийг шүүхэд шилжүүлэв.",
-        "Мөнх тэнгэрийн хүчин дор Монгол Улс цэцэглэн хөгжих болтугай.",
-        "Унасан хүлгээ түрүү магнай, аман хүзүүнд уралдуулж, айрагдуулсан унаач хүүхдүүдэд бэлэг гардууллаа.",
-        "Албан ёсоор хэлэхэд “Монгол Улсын хэрэг эрхлэх газрын гэгээнтэн” гэж нэрлээд байгаа зүйл огт байхгүй.",
-        "Сайн чанарын бохирын хоолой зарна.",
-        "Хараа тэглэх мэс заслын дараа хараа дахин муудах магадлал бага.",
-        "Ер нь бол хараа тэглэх мэс заслыг гоо сайхны мэс засалтай адилхан гэж зүйрлэж болно.",
-        "Хашлага даван, зүлэг гэмтээсэн жолоочийн эрхийг хоёр жилээр хасжээ.",
-        "Монгол хүн бидний сэтгэлийг сорсон орон. Энэ бол миний төрсөн нутаг. Монголын сайхан орон.",
-        "Постройка крейсера затягивалась из-за проектных неувязок, необходимости."
-    ]
+if args.output_dir is not None and len(args.output_dir) > 0:
+    OUTPUT_DIR = args.output_dir
+else:
+    OUTPUT_DIR = 'samples'
+    
 
 torch.set_grad_enabled(False)
 
+
+#
+#   Load Text2Mel checkpoint 
+#
 text2mel = Text2Mel(vocab).eval()
 last_checkpoint_file_name = get_last_checkpoint_file_name(os.path.join(hp.logdir, '%s-text2mel' % args.dataset))
 # last_checkpoint_file_name = 'logdir/%s-text2mel/step-020K.pth' % args.dataset
@@ -53,15 +56,21 @@ else:
     print("text2mel not exits")
     sys.exit(1)
 
+
+
+#
+#   Load SSRN checkpoint 
+#
 ssrn = SSRN().eval()
 last_checkpoint_file_name = get_last_checkpoint_file_name(os.path.join(hp.logdir, '%s-ssrn' % args.dataset))
-# last_checkpoint_file_name = 'logdir/%s-ssrn/step-005K.pth' % args.dataset
 if last_checkpoint_file_name:
     print("loading ssrn checkpoint '%s'..." % last_checkpoint_file_name)
     load_checkpoint(last_checkpoint_file_name, ssrn, None)
 else:
     print("ssrn not exits")
     sys.exit(1)
+
+
 
 # synthetize by one by one because there is a batch processing bug!
 for i in range(len(SENTENCES)):
@@ -87,7 +96,7 @@ for i in range(len(SENTENCES)):
     A = A.cpu().detach().numpy()
     Z = Z.cpu().detach().numpy()
 
-    save_to_png('samples/%d-att.png' % (i + 1), A[0, :, :])
-    save_to_png('samples/%d-mel.png' % (i + 1), Y[0, :, :])
-    save_to_png('samples/%d-mag.png' % (i + 1), Z[0, :, :])
-    save_to_wav(Z[0, :, :].T, 'samples/%d-wav.wav' % (i + 1))
+    save_to_png(f'{OUTPUT_DIR}/%d-att.png' % (i + 1), A[0, :, :])
+    save_to_png(f'{OUTPUT_DIR}/%d-mel.png' % (i + 1), Y[0, :, :])
+    save_to_png(f'{OUTPUT_DIR}/%d-mag.png' % (i + 1), Z[0, :, :])
+    save_to_wav(Z[0, :, :].T, f'{OUTPUT_DIR}/%d-wav.wav' % (i + 1))
